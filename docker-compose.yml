@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  spring-service:
+    build: ./springapp
+    container_name: spring-service-microservice-app
+    ports:
+      - "8081:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.spring.rule=Host(`spring.localhost`)"
+      - "traefik.http.services.spring.loadbalancer.server.port=8080"
+
+  node-service:
+    build: ./node-app
+    container_name: node-service-microservice-app
+    ports:
+      - "3000:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.node.rule=Host(`node.localhost`)"
+      - "traefik.http.services.node.loadbalancer.server.port=3000"
+
+networks:
+  default:
+    driver: bridge
